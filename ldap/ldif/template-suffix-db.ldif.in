@@ -1,0 +1,28 @@
+# replace the Suffix token with your suffix e.g. dc=example,dc=com
+# replace the bename token with your backend name e.g. userRoot
+dn: cn=%ds_bename%,cn=ldbm database,cn=plugins,cn=config
+objectclass: top
+objectclass: extensibleObject
+objectclass: nsBackendInstance
+nsslapd-suffix: %ds_suffix%
+cn: %ds_bename%
+
+dn: cn=encrypted attribute keys,cn=%ds_bename%,cn=ldbm database,cn=plugins,cn=config
+objectClass: top
+objectClass: extensibleObject
+cn: encrypted attributes keys
+
+dn: cn=encrypted attributes,cn=%ds_bename%,cn=ldbm database,cn=plugins,cn=config
+objectClass: top
+objectClass: extensibleObject
+cn: encrypted attributes
+
+dn: cn="%ds_suffix%",cn=mapping tree,cn=config
+objectclass: top
+objectclass: extensibleObject
+objectclass: nsMappingTree
+cn: %ds_suffix%
+cn: "%ds_suffix%"
+nsslapd-state: backend
+nsslapd-backend: %ds_bename%
+

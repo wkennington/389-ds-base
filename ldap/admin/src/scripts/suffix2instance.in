@@ -1,0 +1,58 @@
+#!/bin/sh
+
+source @datadir@/@package_name@/data/DSSharedLib
+
+libpath_add "@libdir@/@package_name@/"
+libpath_add "@libdir@"
+libpath_add "@nss_libdir@"
+libpath_add "@pcre_libdir@"
+
+export LD_LIBRARY_PATH
+SHLIB_PATH=$LD_LIBRARY_PATH
+export SHLIB_PATH
+
+usage ()
+{
+    echo "Usage: suffix2instance [-Z serverID] -s suffix [-h]"
+    echo "Options:"
+    echo "        -Z serverID  - Server instance identifier"
+    echo "        -s suffix    - Suffix used to map to backend instance"
+    echo "        -h           - Display usage"
+}
+
+while getopts "Z:s:h" flag
+do
+    case $flag in
+        Z) servid=$OPTARG;;
+        s) args=$args" -s $OPTARG";;
+        h) usage
+           exit 0;;
+        ?) usage
+           exit 1;;
+    esac
+done
+
+if [ "$args" == "" ]
+then
+    usage
+    exit 1
+fi
+
+initfile=$(get_init_file "@initconfigdir@" $servid)
+if [ $? == 1 ]
+then
+    usage
+    echo "You must supply a valid server instance identifier.  Use -Z to specify instance name"
+    echo "Available instances: $initfile"
+    exit 1
+fi
+
+. $initfile
+
+if [ $# -lt 2 ]
+then
+    echo Usage: suffix2instance [-Z serverID] {-s includesuffix}*
+    exit 1
+fi
+
+@sbindir@/ns-slapd suffix2instance -D $CONFIG_DIR $args 2>&1

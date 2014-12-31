@@ -1,0 +1,83 @@
+#!@perlexec@
+# BEGIN COPYRIGHT BLOCK
+# This Program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; version 2 of the License.
+# 
+# This Program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License along with
+# this Program; if not, write to the Free Software Foundation, Inc., 59 Temple
+# Place, Suite 330, Boston, MA 02111-1307 USA.
+# 
+# Copyright (C) 2013 Red Hat, Inc.
+# All rights reserved.
+# END COPYRIGHT BLOCK
+#
+
+use strict;
+
+use lib qw(@perlpath@);
+use Getopt::Long;
+use Resource;
+use DSCreate qw(removeDSInstance);
+
+# process command line options
+Getopt::Long::Configure(qw(bundling)); # bundling allows -ddddd
+
+my $res = new Resource("@propertydir@/setup-ds.res");
+
+sub usage {
+        print(STDERR "Usage: $0 [-f] [-d -d ... -d] -i instance\n\n");
+        print(STDERR " Opts: -f            - force removal\n");
+        print(STDERR "       -i instance   - instance name to remove (e.g. - slapd-example)\n");
+        print(STDERR "       -d            - turn on debugging output\n");
+}
+
+my $force = "";
+my $instname = "";
+my $initconfig_dir = "";
+my $all = "";
+
+GetOptions('help|h|?' => sub { &usage; exit(0); },
+           'debug|d+' => \$DSUtil::debuglevel,
+           'instance|i=s' => \$instname,
+           'initconfig_dir|c=s' => \$initconfig_dir,
+           'force|f' => \$force,
+           'all|a' => \$all
+           );
+
+# Make sure the instance name option was provided.
+unless ($instname) {
+    &usage; exit(1);
+}
+
+# Make sure a full instance name was provided.
+my ($slapd, $inst) = split(/-/, $instname, 2);
+unless ($inst) {
+    print STDERR "Full instance name must be specified (e.g. - slapd-example)\n";
+    exit 1;
+}
+
+my @errs = removeDSInstance($inst, $force, $all, $initconfig_dir);
+if (@errs) {
+    print STDERR "The following errors occurred during removal:\n";
+    for (@errs) {
+        print STDERR $res->getText($_);
+    }
+    print STDERR "Error: could not remove directory server $inst\n";
+    exit 1;
+}
+
+# if we got here, report success
+print "Instance $instname removed.\n";
+exit 0;
+
+# emacs settings
+# Local Variables:
+# mode:perl
+# indent-tabs-mode: nil
+# tab-width: 4
+# End:

@@ -1,0 +1,3 @@
+#!/bin/sh
+# DEPRECATED - use @sbindir@/restart-dirsrv instead
+exec @sbindir@/restart-dirsrv -d {{INITCONFIG-DIR}} {{SERV-ID}} "$@"

@@ -1,0 +1,76 @@
+#!/bin/sh
+
+source @datadir@/@package_name@/data/DSSharedLib
+
+libpath_add "@libdir@/@package_name@/"
+libpath_add "@nss_libdir@"
+libpath_add "@libdir@"
+libpath_add "@pcre_libdir@"
+
+export LD_LIBRARY_PATH
+SHLIB_PATH=$LD_LIBRARY_PATH
+export SHLIB_PATH
+
+usage()
+{
+    echo "Usage: bak2db archivedir [-Z serverID] [-n backend] [-q] [-h]"
+    echo "Options:"
+    echo "        archivedir   - Directory where the archived backup is located"
+    echo "        -n backend   - Backend database name.  Example: userRoot"
+    echo "        -Z serverID  - Server instance identifier"
+    echo "        -q           - Quiet mode - suppresses output"
+    echo "        -h           - Display usage"  
+}
+
+if [ $# -lt 1 ] || [ $# -gt 7 ]
+then
+    usage
+    exit 1
+elif [[ $1 == -* ]]
+then
+    usage
+    exit 1
+else
+    archivedir=$1
+    shift
+fi
+    
+while getopts "hn:Z:qd:vi:a:SD:" flag
+do
+    case $flag in
+        h) usage
+           exit 0;;
+        Z) servid=$OPTARG;; 
+        n) args=$args" -n $OPTARG";;
+        q) args=$args" -q";;
+        d) args=$args" -d $OPTARG";;
+        v) args=$args" -v";;
+        D) args=$args" -D $OPTARG";;
+        i) args=$args" -i $OPTARG";;
+        a) archivedir=$OPTARG;;
+        S) args=$args" -S";;
+        ?) usage
+           exit 1;;
+    esac
+done
+
+initfile=$(get_init_file "@initconfigdir@" $servid)
+if [ $? == 1 ]
+then
+    usage
+    echo "You must supply a valid server instance identifier.  Use -Z to specify instance name"
+    echo "Available instances: $initfile"
+    exit 1
+fi
+
+. $initfile
+
+if [ 1 = `expr $archivedir : "\/"` ]
+then
+    archivedir=$archivedir
+else
+    # relative
+    archivedir=`pwd`/$archivedir
+fi
+
+@sbindir@/ns-slapd archive2db -D $CONFIG_DIR -a $archivedir $args

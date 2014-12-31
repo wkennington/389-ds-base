@@ -1,0 +1,76 @@
+#!/bin/sh
+
+source @datadir@/@package_name@/data/DSSharedLib
+
+libpath_add "@libdir@/@package_name@/"
+libpath_add "@nss_libdir@"
+libpath_add "@libdir@"
+libpath_add "@pcre_libdir@"
+
+export LD_LIBRARY_PATH
+SHLIB_PATH=$LD_LIBRARY_PATH
+export SHLIB_PATH
+
+usage()
+{
+    echo "Usage: db2bak [archivedir] [-Z serverID] [-q] [-h]"
+    echo "Options:"
+    echo "        archivedir   - Directory where the backup should be stored"
+    echo "        -Z serverID  - Server instance identifier"
+    echo "        -q           - Quiet mode - suppresses output"
+    echo "        -h           - Display usage"  
+}
+
+if [ $# -gt 4 ]
+then
+    usage
+    exit 1
+fi
+
+if [ "$#" -gt 0 ]
+then
+    if [[ $1 != -* ]]
+    then
+        bak_dir=$1
+        shift
+    fi
+fi
+
+while getopts "hqd:Z:vi:a:SD" flag
+do
+    case $flag in
+        h) usage
+           exit 0;;
+        q) args=$args" -q";;
+        v) args=$args" -v";;
+        S) args=$args" -S";;
+        D) args=$args" -D $OPTARG";;
+        i) args=$args" -i $OPTARG";;
+        a) $bakdir=$OPTARG;;
+        d) args=$args" -d $OPTARG";;
+        Z) servid=$OPTARG;;
+        ?) usage
+           exit 1;;
+    esac
+done
+
+
+initfile=$(get_init_file "@initconfigdir@" $servid)
+if [ $? == 1 ]
+then
+    usage
+    echo "You must supply a valid server instance identifier.  Use -Z to specify instance name"
+    echo "Available instances: $initfile"
+    exit 1
+fi
+
+servid=`normalize_server_id $initfile`
+. $initfile
+
+if [ -z $bak_dir ]
+then
+    bak_dir=@localstatedir@/lib/@PACKAGE_NAME@/slapd-$servid/bak/$servid-`date +%Y_%m_%d_%H_%M_%S`
+fi
+
+echo "Back up directory: $bak_dir"
+@sbindir@/ns-slapd db2archive -D $CONFIG_DIR -a $bak_dir $args

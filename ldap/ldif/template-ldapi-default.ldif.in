@@ -1,0 +1,8 @@
+dn: cn=config
+changetype: modify
+replace: nsslapd-ldapifilepath
+nsslapd-ldapifilepath: %run_dir%/slapd-%dsid%.socket
+-
+replace: nsslapd-ldapilisten
+nsslapd-ldapilisten: off
+

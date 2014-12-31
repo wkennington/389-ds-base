@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cd {{SERVERBIN-DIR}}
+./db2index "$@" -Z {{SERV-ID}}
+exit $?
